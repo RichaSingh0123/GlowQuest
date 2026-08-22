@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,20 +49,29 @@ export default function TabTwoScreen() {
 
           <View style={styles.worldList}>
             {worlds.map((world) => (
-              <ThemedView key={world.id} type="backgroundElement" style={styles.worldCard}>
-                <ThemedText style={styles.worldEmoji}>{world.emoji}</ThemedText>
-                <View style={styles.worldCopy}>
-                  <ThemedText type="subtitle" style={styles.worldName}>
-                    {world.name}
-                  </ThemedText>
-                  <ThemedText themeColor="textSecondary" style={styles.worldDescription}>
-                    {world.description}
-                  </ThemedText>
-                  <ThemedText type="small" style={styles.worldTheme}>
-                    Theme: {world.theme}
-                  </ThemedText>
-                </View>
-              </ThemedView>
+              <Pressable
+                key={world.id}
+                accessibilityRole="button"
+                onPress={() => {
+                  console.log(`[GlowQuest] World card clicked: ${world.id}`);
+                  router.push({ pathname: '/world/[worldId]', params: { worldId: world.id } });
+                }}
+                style={({ pressed }) => [styles.worldPressable, pressed && styles.pressed]}>
+                <ThemedView type="backgroundElement" style={styles.worldCard}>
+                  <ThemedText style={styles.worldEmoji}>{world.emoji}</ThemedText>
+                  <View style={styles.worldCopy}>
+                    <ThemedText type="subtitle" style={styles.worldName}>
+                      {world.name}
+                    </ThemedText>
+                    <ThemedText themeColor="textSecondary" style={styles.worldDescription}>
+                      {world.description}
+                    </ThemedText>
+                    <ThemedText type="small" style={styles.worldTheme}>
+                      Theme: {world.theme}
+                    </ThemedText>
+                  </View>
+                </ThemedView>
+              </Pressable>
             ))}
           </View>
 
@@ -171,6 +181,9 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: Spacing.three,
     marginTop: Spacing.two,
+  },
+  worldPressable: {
+    width: '100%',
   },
   worldCard: {
     flexDirection: 'row',
