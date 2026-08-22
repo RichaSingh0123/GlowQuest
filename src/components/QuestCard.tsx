@@ -5,13 +5,22 @@ import { ThemedView } from './themed-view';
 type QuestCardProps = {
   emoji: string;
   title: string;
+  description: string;
   duration: string;
   xp: number;
   completed: boolean;
   onComplete: () => void;
 };
 
-export function QuestCard({ emoji, title, duration, xp, completed, onComplete }: QuestCardProps) {
+export function QuestCard({
+  emoji,
+  title,
+  description,
+  duration,
+  xp,
+  completed,
+  onComplete,
+}: QuestCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -33,6 +42,8 @@ export function QuestCard({ emoji, title, duration, xp, completed, onComplete }:
           {title}
         </ThemedText>
 
+        <ThemedText style={styles.description}>{description}</ThemedText>
+
         <View style={styles.details}>
           <ThemedText style={styles.detailText}>⏱ {duration}</ThemedText>
           <ThemedText style={completed ? styles.completeText : styles.actionText}>
@@ -46,12 +57,12 @@ export function QuestCard({ emoji, title, duration, xp, completed, onComplete }:
 
 const styles = StyleSheet.create({
   card: {
-    padding: 20,
-    borderRadius: 24,
-    gap: 14,
+    padding: 18,
+    borderRadius: 26,
+    gap: 15,
     borderWidth: 1,
-    borderColor: '#E7D9FF',
-    backgroundColor: '#FFFBFF',
+    borderColor: '#F1DDE9',
+    backgroundColor: '#FFFDFC',
 
     shadowColor: '#000',
     shadowOffset: {
@@ -69,13 +80,13 @@ const styles = StyleSheet.create({
   },
 
   pressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.86,
+    transform: [{ scale: 0.985 }],
   },
 
   completedCard: {
     backgroundColor: '#F1FFF7',
-    borderColor: '#A8E5C5',
+    borderColor: '#A9DFC0',
   },
 
   topRow: {
@@ -90,11 +101,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF0C7',
+    backgroundColor: '#FFE9D7',
   },
 
   completedBubble: {
-    backgroundColor: '#B8F0D0',
+    backgroundColor: '#BCEFD0',
   },
 
   emoji: {
@@ -102,9 +113,16 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 25,
-    lineHeight: 32,
-    color: '#33254A',
+    fontSize: 24,
+    lineHeight: 31,
+    color: '#3D2A51',
+  },
+
+  description: {
+    marginTop: -7,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#776B80',
   },
 
   xpPill: {
@@ -117,7 +135,7 @@ const styles = StyleSheet.create({
   xpText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#7443B7',
+    color: '#8052B4',
   },
 
   details: {
@@ -128,13 +146,13 @@ const styles = StyleSheet.create({
 
   detailText: {
     fontSize: 15,
-    color: '#6D637A',
+    color: '#776B80',
   },
 
   actionText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#F06B4F',
+    color: '#D45D6F',
   },
 
   completeText: {

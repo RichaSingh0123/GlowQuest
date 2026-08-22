@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ExternalLink } from '@/components/external-link';
@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Collapsible } from '@/components/ui/collapsible';
 import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useWorlds } from '@/context/world-context';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function TabTwoScreen() {
@@ -18,6 +19,7 @@ export default function TabTwoScreen() {
     bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
   };
   const theme = useTheme();
+  const { worlds } = useWorlds();
 
   const contentPlatformStyle = Platform.select({
     android: {
@@ -41,8 +43,27 @@ export default function TabTwoScreen() {
         <ThemedView style={styles.titleContainer}>
           <ThemedText type="subtitle">Explore</ThemedText>
           <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
+            Choose a world for your next adventure.
           </ThemedText>
+
+          <View style={styles.worldList}>
+            {worlds.map((world) => (
+              <ThemedView key={world.id} type="backgroundElement" style={styles.worldCard}>
+                <ThemedText style={styles.worldEmoji}>{world.emoji}</ThemedText>
+                <View style={styles.worldCopy}>
+                  <ThemedText type="subtitle" style={styles.worldName}>
+                    {world.name}
+                  </ThemedText>
+                  <ThemedText themeColor="textSecondary" style={styles.worldDescription}>
+                    {world.description}
+                  </ThemedText>
+                  <ThemedText type="small" style={styles.worldTheme}>
+                    Theme: {world.theme}
+                  </ThemedText>
+                </View>
+              </ThemedView>
+            ))}
+          </View>
 
           <ExternalLink href="https://docs.expo.dev" asChild>
             <Pressable style={({ pressed }) => pressed && styles.pressed}>
@@ -145,6 +166,36 @@ const styles = StyleSheet.create({
   },
   centerText: {
     textAlign: 'center',
+  },
+  worldList: {
+    width: '100%',
+    gap: Spacing.three,
+    marginTop: Spacing.two,
+  },
+  worldCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
+  },
+  worldEmoji: {
+    fontSize: 38,
+  },
+  worldCopy: {
+    flex: 1,
+    gap: Spacing.one,
+  },
+  worldName: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  worldDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  worldTheme: {
+    color: '#8E6FB6',
   },
   pressed: {
     opacity: 0.7,

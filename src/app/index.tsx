@@ -1,29 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { QuestCard } from '@/components/QuestCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-
-type Quest = {
-  id: string;
-  emoji: string;
-  title: string;
-  duration: string;
-  xp: number;
-};
-
-const quests: Quest[] = [
-  { id: 'study-java', emoji: '📚', title: 'Study Java', duration: '20 min', xp: 30 },
-  { id: 'morning-workout', emoji: '🧘', title: 'Morning Workout', duration: '15 min', xp: 20 },
-  { id: 'drink-water', emoji: '💧', title: 'Drink Water', duration: '5 min', xp: 10 },
-];
+import { useQuests } from '@/context/quest-context';
 
 export default function HomeScreen() {
-  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>([]);
-  const [totalXp, setTotalXp] = useState(0);
+  const { quests, completedQuestIds, totalXp, completeQuest, addQuest } = useQuests();
   const [celebration, setCelebration] = useState('');
+  const [isAddQuestVisible, setIsAddQuestVisible] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [duration, setDuration] = useState('15');
+  const [xp, setXp] = useState('10');
+  const [category, setCategory] = useState('Personal');
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
   const celebrationOffset = useRef(new Animated.Value(8)).current;
 
@@ -47,14 +47,36 @@ export default function HomeScreen() {
     return () => clearTimeout(timeout);
   }, [celebration, celebrationOffset, celebrationOpacity]);
 
-  function completeQuest(quest: Quest) {
+  function finishQuest(quest: (typeof quests)[number]) {
     if (completedQuestIds.includes(quest.id)) {
       return;
     }
 
-    setCompletedQuestIds((current) => [...current, quest.id]);
-    setTotalXp((current) => current + quest.xp);
+    completeQuest(quest);
     setCelebration(`Quest complete! +${quest.xp} XP`);
+  }
+
+  function createQuest() {
+    const parsedDuration = Number.parseInt(duration, 10);
+    const parsedXp = Number.parseInt(xp, 10);
+    if (!title.trim() || !Number.isFinite(parsedDuration) || parsedDuration <= 0 || !Number.isFinite(parsedXp) || parsedXp <= 0) {
+      return;
+    }
+
+    addQuest({
+      emoji: '✨',
+      title: title.trim(),
+      description: description.trim() || 'A little step toward your brighter day.',
+      duration: `${parsedDuration} min`,
+      xp: parsedXp,
+      category: category.trim() || 'Personal',
+    });
+    setTitle('');
+    setDescription('');
+    setDuration('15');
+    setXp('10');
+    setCategory('Personal');
+    setIsAddQuestVisible(false);
   }
 
   return (
@@ -73,6 +95,9 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.heroPanel}>
+            <View style={styles.heroMoon} />
+            <View style={styles.heroCloudOne} />
+            <View style={styles.heroCloudTwo} />
             <View style={styles.sparkleRow}>
               <ThemedText style={styles.sparkle}>✦</ThemedText>
               <ThemedText style={styles.sparkleSmall}>✧</ThemedText>
@@ -106,9 +131,17 @@ export default function HomeScreen() {
               <ThemedText style={styles.sectionKicker}>FOR TODAY</ThemedText>
               <ThemedText style={styles.sectionTitle}>Today's Quests</ThemedText>
             </View>
-            <ThemedText style={styles.questCount}>
-              {completedQuestIds.length}/{quests.length}
-            </ThemedText>
+            <View style={styles.sectionActions}>
+              <ThemedText style={styles.questCount}>
+                {completedQuestIds.length}/{quests.length}
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setIsAddQuestVisible(true)}
+                style={({ pressed }) => [styles.addButton, pressed && styles.buttonPressed]}>
+                <ThemedText style={styles.addButtonText}>+ Add Quest</ThemedText>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.questList}>
@@ -117,12 +150,41 @@ export default function HomeScreen() {
                 key={quest.id}
                 {...quest}
                 completed={completedQuestIds.includes(quest.id)}
-                onComplete={() => completeQuest(quest)}
+                onComplete={() => finishQuest(quest)}
               />
             ))}
           </View>
         </SafeAreaView>
       </ScrollView>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isAddQuestVisible}
+        onRequestClose={() => setIsAddQuestVisible(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <View>
+                <ThemedText style={styles.modalKicker}>NEW ADVENTURE</ThemedText>
+                <ThemedText style={styles.modalTitle}>Add a quest</ThemedText>
+              </View>
+              <Pressable onPress={() => setIsAddQuestVisible(false)} style={styles.closeButton}>
+                <ThemedText style={styles.closeText}>×</ThemedText>
+              </Pressable>
+            </View>
+            <TextInput value={title} onChangeText={setTitle} placeholder="Quest title" placeholderTextColor="#A292A8" style={styles.input} />
+            <TextInput value={description} onChangeText={setDescription} placeholder="Description (optional)" placeholderTextColor="#A292A8" style={[styles.input, styles.descriptionInput]} multiline />
+            <View style={styles.inputRow}>
+              <TextInput value={duration} onChangeText={setDuration} placeholder="Minutes" keyboardType="number-pad" placeholderTextColor="#A292A8" style={[styles.input, styles.smallInput]} />
+              <TextInput value={xp} onChangeText={setXp} placeholder="XP reward" keyboardType="number-pad" placeholderTextColor="#A292A8" style={[styles.input, styles.smallInput]} />
+            </View>
+            <TextInput value={category} onChangeText={setCategory} placeholder="Category" placeholderTextColor="#A292A8" style={styles.input} />
+            <Pressable onPress={createQuest} style={({ pressed }) => [styles.createButton, pressed && styles.buttonPressed]}>
+              <ThemedText style={styles.createButtonText}>Create Quest ✦</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -130,7 +192,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF8F0',
+    backgroundColor: '#FFF7F2',
   },
 
   scrollContent: {
@@ -140,7 +202,7 @@ const styles = StyleSheet.create({
 
   safeArea: {
     width: '100%',
-    maxWidth: 760,
+    maxWidth: 560,
     alignSelf: 'center',
     paddingHorizontal: 20,
   },
@@ -157,15 +219,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
-    color: '#A36E59',
+    color: '#B56F83',
   },
 
   brand: {
     marginTop: 4,
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 32,
+    lineHeight: 38,
     fontWeight: '800',
-    color: '#33254A',
+    color: '#3D2A51',
   },
 
   levelBadge: {
@@ -174,7 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFCE70',
+    backgroundColor: '#FFD889',
     transform: [{ rotate: '4deg' }],
   },
 
@@ -192,11 +254,12 @@ const styles = StyleSheet.create({
   },
 
   heroPanel: {
+    position: 'relative',
     overflow: 'hidden',
-    padding: 24,
-    borderRadius: 30,
-    backgroundColor: '#6652C8',
-    shadowColor: '#4B378E',
+    padding: 26,
+    borderRadius: 32,
+    backgroundColor: '#7861C9',
+    shadowColor: '#6B4AA0',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.22,
     shadowRadius: 16,
@@ -204,6 +267,7 @@ const styles = StyleSheet.create({
   },
 
   sparkleRow: {
+    zIndex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -211,29 +275,32 @@ const styles = StyleSheet.create({
 
   sparkle: {
     fontSize: 21,
-    color: '#FFD978',
+    color: '#FFE39A',
   },
 
   sparkleSmall: {
     fontSize: 14,
-    color: '#BFE8FF',
+    color: '#FFD1DF',
   },
 
   greeting: {
+    zIndex: 1,
     marginTop: 8,
     fontSize: 28,
     lineHeight: 34,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#FFFDFC',
   },
 
   heroCopy: {
+    zIndex: 1,
     marginTop: 5,
     fontSize: 15,
-    color: '#E7E1FF',
+    color: '#F2E9FF',
   },
 
   progressMeta: {
+    zIndex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 24,
@@ -249,20 +316,51 @@ const styles = StyleSheet.create({
   progressValue: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFD978',
+    color: '#FFE39A',
   },
 
   progressTrack: {
+    zIndex: 1,
     height: 11,
     overflow: 'hidden',
     borderRadius: 8,
-    backgroundColor: '#4D3D9E',
+    backgroundColor: '#5D489F',
   },
 
   progressFill: {
     height: '100%',
     borderRadius: 8,
-    backgroundColor: '#FFD978',
+    backgroundColor: '#FFE39A',
+  },
+
+  heroMoon: {
+    position: 'absolute',
+    top: -30,
+    right: 34,
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    backgroundColor: 'rgba(255, 226, 164, 0.24)',
+  },
+
+  heroCloudOne: {
+    position: 'absolute',
+    right: -12,
+    bottom: 28,
+    width: 130,
+    height: 34,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+
+  heroCloudTwo: {
+    position: 'absolute',
+    right: 54,
+    bottom: 42,
+    width: 58,
+    height: 42,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
 
   celebration: {
@@ -270,7 +368,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 16,
-    backgroundColor: '#FFF0BD',
+    borderWidth: 1,
+    borderColor: '#F3D98B',
+    backgroundColor: '#FFF4C9',
   },
 
   celebrationText: {
@@ -281,18 +381,47 @@ const styles = StyleSheet.create({
   },
 
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginTop: 32,
     marginBottom: 14,
+  },
+
+  sectionActions: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+
+  addButton: {
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 16,
+    backgroundColor: '#E9748D',
+    shadowColor: '#C95873',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 7,
+    elevation: 3,
+  },
+
+  addButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+
+  buttonPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.97 }],
   },
 
   sectionKicker: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
-    color: '#A36E59',
+    color: '#B56F83',
   },
 
   sectionTitle: {
@@ -300,17 +429,116 @@ const styles = StyleSheet.create({
     fontSize: 29,
     lineHeight: 35,
     fontWeight: '800',
-    color: '#33254A',
+    color: '#3D2A51',
   },
 
   questCount: {
     paddingBottom: 4,
     fontSize: 15,
     fontWeight: '800',
-    color: '#8E6FB6',
+    color: '#A06AB3',
   },
 
   questList: {
     gap: 14,
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(61, 42, 81, 0.42)',
+  },
+
+  modalCard: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    padding: 22,
+    borderRadius: 28,
+    backgroundColor: '#FFF9F7',
+    shadowColor: '#3D2A51',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+
+  modalKicker: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    color: '#B56F83',
+  },
+
+  modalTitle: {
+    marginTop: 3,
+    fontSize: 27,
+    lineHeight: 33,
+    fontWeight: '800',
+    color: '#3D2A51',
+  },
+
+  closeButton: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 17,
+    backgroundColor: '#F3E5F1',
+  },
+
+  closeText: {
+    fontSize: 25,
+    lineHeight: 28,
+    color: '#8052B4',
+  },
+
+  input: {
+    minHeight: 48,
+    marginBottom: 11,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#E8D7E5',
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    color: '#3D2A51',
+    fontSize: 15,
+  },
+
+  descriptionInput: {
+    minHeight: 76,
+    paddingTop: 13,
+    textAlignVertical: 'top',
+  },
+
+  inputRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  smallInput: {
+    flex: 1,
+  },
+
+  createButton: {
+    alignItems: 'center',
+    marginTop: 4,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: '#7861C9',
+  },
+
+  createButtonText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });
