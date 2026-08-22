@@ -17,6 +17,8 @@ import { useQuests } from '@/context/quest-context';
 
 export default function HomeScreen() {
   const { quests, completedQuestIds, totalXp, completeQuest, addQuest } = useQuests();
+  const homeQuests = quests.filter((quest) => quest.worldId === 'everyday');
+  const homeCompletedCount = homeQuests.filter((quest) => completedQuestIds.includes(quest.id)).length;
   const [celebration, setCelebration] = useState('');
   const [isAddQuestVisible, setIsAddQuestVisible] = useState(false);
   const [title, setTitle] = useState('');
@@ -133,7 +135,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.sectionActions}>
               <ThemedText style={styles.questCount}>
-                {completedQuestIds.length}/{quests.length}
+                {homeCompletedCount}/{homeQuests.length}
               </ThemedText>
               <Pressable
                 accessibilityRole="button"
@@ -145,7 +147,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.questList}>
-            {quests.map((quest) => (
+            {homeQuests.map((quest) => (
               <QuestCard
                 key={quest.id}
                 {...quest}

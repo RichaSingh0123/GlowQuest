@@ -8,8 +8,12 @@ type QuestCardProps = {
   description: string;
   duration: string;
   xp: number;
+  status?: 'available' | 'accepted' | 'later' | 'completed';
   completed: boolean;
-  onComplete: () => void;
+  showActions?: boolean;
+  onComplete?: () => void;
+  onAccept?: () => void;
+  onLater?: () => void;
 };
 
 export function QuestCard({
@@ -18,15 +22,19 @@ export function QuestCard({
   description,
   duration,
   xp,
+  status,
   completed,
+  showActions = false,
   onComplete,
+  onAccept,
+  onLater,
 }: QuestCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ checked: completed, disabled: completed }}
       disabled={completed}
-      onPress={onComplete}
+      onPress={showActions ? undefined : onComplete}
       style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}>
       <ThemedView style={[styles.card, completed && styles.completedCard]}>
         <View style={styles.topRow}>
@@ -47,9 +55,25 @@ export function QuestCard({
         <View style={styles.details}>
           <ThemedText style={styles.detailText}>⏱ {duration}</ThemedText>
           <ThemedText style={completed ? styles.completeText : styles.actionText}>
-            {completed ? 'Quest complete' : 'Tap to complete'}
+            {completed
+              ? 'Quest complete'
+              : showActions
+                ? status === 'accepted'
+                  ? 'Accepted quest'
+                  : 'Swipe to choose'
+                : 'Tap to complete'}
           </ThemedText>
         </View>
+        {showActions ? (
+          <View style={styles.actionRow}>
+            <Pressable onPress={onLater} style={[styles.actionButton, styles.laterButton]}>
+              <ThemedText style={styles.actionButtonText}>Save for later</ThemedText>
+            </Pressable>
+            <Pressable onPress={onAccept} style={[styles.actionButton, styles.acceptButton]}>
+              <ThemedText style={styles.actionButtonText}>Accept quest</ThemedText>
+            </Pressable>
+          </View>
+        ) : null}
       </ThemedView>
     </Pressable>
   );
@@ -159,5 +183,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#218B58',
+  },
+
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  actionButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 13,
+  },
+
+  laterButton: {
+    backgroundColor: '#F1E8FF',
+  },
+
+  acceptButton: {
+    backgroundColor: '#E9748D',
+  },
+
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

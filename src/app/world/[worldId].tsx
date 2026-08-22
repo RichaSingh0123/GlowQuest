@@ -2,8 +2,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { QuestDeck } from '@/components/QuestDeck';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { worldQuestCopy } from '@/constants/world-quest-copy';
+import { useQuests } from '@/context/quest-context';
 import { useWorlds } from '@/context/world-context';
 
 const themeStyles = {
@@ -34,6 +37,7 @@ type ThemeKey = keyof typeof themeStyles;
 export function WorldAdventureScreen({ selectedWorldId }: { selectedWorldId?: string } = {}) {
   const { worldId: routeWorldId } = useLocalSearchParams<{ worldId: string }>();
   const { worlds } = useWorlds();
+  const { quests, acceptQuest, saveQuestForLater, restoreQuest, completeQuest } = useQuests();
   const worldId = selectedWorldId ?? routeWorldId;
   const world = worlds.find((item) => item.id === worldId);
 
@@ -49,6 +53,10 @@ export function WorldAdventureScreen({ selectedWorldId }: { selectedWorldId?: st
   }
 
   const colors = themeStyles[world.theme as ThemeKey] ?? themeStyles.dreamscape;
+  const laterQuests = quests.filter(
+    (quest) => quest.worldId === world.id && quest.status === 'later' && !quest.completed,
+  );
+  const copy = worldQuestCopy[world.id];
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -78,6 +86,35 @@ export function WorldAdventureScreen({ selectedWorldId }: { selectedWorldId?: st
             style={({ pressed }) => [styles.beginButton, { backgroundColor: colors.accent }, pressed && styles.pressed]}>
             <ThemedText style={styles.beginButtonText}>Begin this world's quests ✦</ThemedText>
           </Pressable>
+
+          <QuestDeck
+            quests={quests}
+            worldId={world.id}
+            onAccept={acceptQuest}
+            onSaveForLater={saveQuestForLater}
+            onComplete={completeQuest}
+          />
+
+          {copy ? (
+            <View style={[styles.laterPanel, { backgroundColor: colors.panel }]}>
+              <ThemedText style={styles.laterKicker}>SAVED FOR LATER</ThemedText>
+              <ThemedText style={styles.laterTitle}>{copy.laterCollection}</ThemedText>
+              {laterQuests.length > 0 ? (
+                laterQuests.map((quest) => (
+                  <View key={quest.id} style={styles.laterQuest}>
+                    <ThemedText style={styles.laterQuestTitle}>
+                      {quest.emoji} {quest.title}
+                    </ThemedText>
+                    <Pressable onPress={() => restoreQuest(quest.id)} style={styles.restoreButton}>
+                      <ThemedText style={styles.restoreText}>Restore</ThemedText>
+                    </Pressable>
+                  </View>
+                ))
+              ) : (
+                <ThemedText style={styles.laterEmpty}>No quests saved yet.</ThemedText>
+              )}
+            </View>
+          ) : null}
         </SafeAreaView>
       </ScrollView>
     </ThemedView>
@@ -185,6 +222,56 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  laterPanel: {
+    width: '100%',
+    marginTop: 20,
+    padding: 20,
+    borderRadius: 24,
+  },
+  laterKicker: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    color: '#B56F83',
+  },
+  laterTitle: {
+    marginTop: 4,
+    marginBottom: 12,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '800',
+    color: '#3D2A51',
+  },
+  laterQuest: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingVertical: 9,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(61, 42, 81, 0.12)',
+  },
+  laterQuestTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#3D2A51',
+  },
+  restoreButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  restoreText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#8052B4',
+  },
+  laterEmpty: {
+    fontSize: 14,
+    color: '#776B80',
   },
   backButton: {
     paddingHorizontal: 18,
