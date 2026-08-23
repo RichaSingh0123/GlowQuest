@@ -23,7 +23,7 @@ export function TabButton({
   isFocused,
 }: {
   children: string;
-  href: '/' | '/explore' | '/progress';
+  href: '/' | '/explore' | '/progress' | '/profile';
   isFocused: boolean;
 }) {
   return (
@@ -52,6 +52,7 @@ export function CustomTabList({ pathname }: { pathname: string }) {
         <TabButton href="/" isFocused={pathname === '/'}>Home</TabButton>
         <TabButton href="/explore" isFocused={pathname === '/explore'}>Explore</TabButton>
         <TabButton href="/progress" isFocused={pathname === '/progress'}>Progress</TabButton>
+        <TabButton href="/profile" isFocused={pathname === '/profile'}>Profile</TabButton>
       </ThemedView>
     </View>
   );

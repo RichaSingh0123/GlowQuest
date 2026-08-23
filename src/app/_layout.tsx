@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { ProfileProvider } from '@/context/profile-context';
 import { QuestProvider } from '@/context/quest-context';
 import { WorldProvider } from '@/context/world-context';
 
@@ -14,10 +15,12 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <QuestProvider>
-        <WorldProvider>
-          <AnimatedSplashOverlay />
-          <AppTabs />
-        </WorldProvider>
+        <ProfileProvider>
+          <WorldProvider>
+            <AnimatedSplashOverlay />
+            <AppTabs />
+          </WorldProvider>
+        </ProfileProvider>
       </QuestProvider>
     </ThemeProvider>
   );
