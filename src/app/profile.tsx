@@ -10,9 +10,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { VISUAL_STYLE_REGISTRY } from '@/constants/visual-styles';
 import { getAvatarsForStyle, MAX_AVATAR_NAME_LENGTH } from '@/data/profile';
 import type { VisualStyle } from '@/data/profile';
 import { useProfile } from '@/context/profile-context';
+import { useQuests } from '@/context/quest-context';
 import { useWorlds } from '@/context/world-context';
 
 export default function ProfileScreen() {
@@ -26,6 +28,8 @@ export default function ProfileScreen() {
     selectCurrentWorld,
   } = useProfile();
   const { worlds } = useWorlds();
+  // Streak stays owned by the quest/progression system — read, never stored here.
+  const { currentStreak } = useQuests();
   const colors = styleTokens.colors;
 
   const [nameDraft, setNameDraft] = useState(profile.avatarName);
@@ -119,6 +123,15 @@ export default function ProfileScreen() {
               </ThemedText>
             </View>
             <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <ThemedText style={[styles.statIcon, { color: colors.accent }]}>♥</ThemedText>
+              <ThemedText style={[styles.statNumber, { color: colors.textPrimary }]}>
+                {currentStreak}
+              </ThemedText>
+              <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Day streak
+              </ThemedText>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
               <ThemedText style={[styles.statIcon, { color: colors.accent }]}>🌍</ThemedText>
               <ThemedText style={[styles.statNumberSmall, { color: colors.textPrimary }]}>
                 {currentWorld ? `${currentWorld.emoji} ${currentWorld.name}` : '—'}
@@ -127,13 +140,22 @@ export default function ProfileScreen() {
                 Current world
               </ThemedText>
             </View>
+            <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <ThemedText style={[styles.statIcon, { color: colors.accent }]}>✦</ThemedText>
+              <ThemedText style={[styles.statNumber, { color: colors.textPrimary }]}>
+                {profile.unlockedWorldIds.length}/{worlds.length}
+              </ThemedText>
+              <ThemedText style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Worlds unlocked
+              </ThemedText>
+            </View>
           </View>
 
           {/* Visual style chooser */}
           <ThemedText style={[styles.sectionKicker, { color: colors.accent }]}>VISUAL STYLE</ThemedText>
           <View style={styles.styleRow}>
-            {(Object.keys(styleTokenOptions) as VisualStyle[]).map((styleKey) => {
-              const option = styleTokenOptions[styleKey];
+            {(Object.keys(VISUAL_STYLE_REGISTRY) as VisualStyle[]).map((styleKey) => {
+              const option = VISUAL_STYLE_REGISTRY[styleKey];
               const selected = profile.visualStyle === styleKey;
               return (
                 <Pressable
@@ -256,6 +278,10 @@ export default function ProfileScreen() {
             })}
           </View>
 
+          <ThemedText style={[styles.memberSince, { color: colors.textSecondary }]}>
+            Adventuring since {formatMemberSince(profile.createdAt)}
+          </ThemedText>
+
           <ThemedText style={[styles.footerNote, { color: colors.textSecondary }]}>
             Your style shapes future adventures — maps, quests and celebrations will follow it.
           </ThemedText>
@@ -265,10 +291,28 @@ export default function ProfileScreen() {
   );
 }
 
-const styleTokenOptions = {
-  fairytale: { label: 'Fairytale', emoji: '✨', tagline: 'Soft, dreamy & magical' },
-  adventure: { label: 'Adventure', emoji: '🧭', tagline: 'Brave, bright & legendary' },
-} as const;
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const;
+
+function formatMemberSince(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -380,11 +424,13 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginTop: 14,
   },
   statCard: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '47%',
     padding: 16,
     borderRadius: 22,
     borderWidth: 1,
@@ -533,6 +579,12 @@ const styles = StyleSheet.create({
     marginTop: 26,
     fontSize: 13,
     lineHeight: 19,
+    textAlign: 'center',
+  },
+  memberSince: {
+    marginTop: 16,
+    fontSize: 12,
+    fontWeight: '700',
     textAlign: 'center',
   },
   pressed: {
