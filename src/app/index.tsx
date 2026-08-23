@@ -70,6 +70,7 @@ export default function HomeScreen() {
       title: title.trim(),
       description: description.trim() || 'A little step toward your brighter day.',
       duration: `${parsedDuration} min`,
+      durationMinutes: parsedDuration,
       xp: parsedXp,
       category: category.trim() || 'Personal',
     });

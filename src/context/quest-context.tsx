@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react';
 
 import {
+  computeCurrentStreak,
   createCompletionEvent,
   hasCompletionEventForQuest,
   hydrateProgression,
@@ -13,6 +14,7 @@ import {
   seedQuests,
   type PersistedQuestRecord,
   type Quest,
+  type QuestWorldId,
 } from '@/data/quests';
 
 export type { Quest, QuestStatus, QuestWorldId } from '@/data/quests';
@@ -33,6 +35,7 @@ type QuestContextValue = {
   completeQuest: (quest: Quest) => void;
   addQuest: (
     quest: Omit<Quest, 'id' | 'completed' | 'createdAt' | 'worldId' | 'status'>,
+    options?: { worldId?: QuestWorldId },
   ) => void;
 };
 
@@ -97,12 +100,16 @@ function questReducer(state: QuestState, action: QuestAction): QuestState {
       }
 
       const completedAt = new Date().toISOString();
+      const completionEvent = createCompletionEvent(action.quest, completedAt);
       return {
         ...state,
         completedQuestIds: [...state.completedQuestIds, action.quest.id],
-        completionEvents: [...state.completionEvents, createCompletionEvent(action.quest, completedAt)],
+        completionEvents: [...state.completionEvents, completionEvent],
         totalXp: state.totalXp + action.quest.xp,
-        currentStreak: 1,
+        currentStreak: computeCurrentStreak(
+          [...state.completionEvents, completionEvent],
+          new Date(completedAt),
+        ),
         lastCompletedAt: completedAt,
         quests: state.quests.map((quest) =>
           quest.id === action.quest.id ? { ...quest, completed: true, status: 'completed' } : quest,
@@ -212,15 +219,16 @@ export function QuestProvider({ children }: { children: ReactNode }) {
 
   function addQuest(
     quest: Omit<Quest, 'id' | 'completed' | 'createdAt' | 'worldId' | 'status'>,
+    options?: { worldId?: QuestWorldId },
   ) {
     dispatch({
       type: 'add',
       quest: {
         ...quest,
-        id: `quest-${Date.now()}`,
+        id: `quest-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         completed: false,
         createdAt: new Date().toISOString(),
-        worldId: HOME_QUEST_WORLD_ID,
+        worldId: options?.worldId ?? HOME_QUEST_WORLD_ID,
         status: 'available',
       },
     });

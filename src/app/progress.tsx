@@ -3,13 +3,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { getCalendarDayKey } from '@/data/progression';
 import { getLevelFromXp, getXpWithinLevel, useQuests } from '@/context/quest-context';
 
 export default function ProgressScreen() {
-  const { completedQuestIds, totalXp, currentStreak } = useQuests();
+  const { completedQuestIds, totalXp, currentStreak, completionEvents } = useQuests();
   const level = getLevelFromXp(totalXp);
   const currentXp = getXpWithinLevel(totalXp);
   const questsCompleted = completedQuestIds.length;
+  const todayKey = getCalendarDayKey(new Date().toISOString());
+  const questsCompletedToday = completionEvents.filter(
+    (event) => getCalendarDayKey(event.completedAt) === todayKey,
+  ).length;
 
   return (
     <ThemedView style={styles.container}>
@@ -55,7 +60,7 @@ export default function ProgressScreen() {
             </View>
             <View style={[styles.statCard, styles.mintCard]}>
               <ThemedText style={styles.statIcon}>☀</ThemedText>
-              <ThemedText style={styles.statNumber}>{questsCompleted}</ThemedText>
+              <ThemedText style={styles.statNumber}>{questsCompletedToday}</ThemedText>
               <ThemedText style={styles.statLabel}>Today's quests</ThemedText>
             </View>
             <View style={[styles.statCard, styles.lavenderCard]}>

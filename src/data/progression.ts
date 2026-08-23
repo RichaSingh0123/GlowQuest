@@ -12,6 +12,10 @@ export type QuestCompletionEvent = {
   worldId: QuestWorldId;
   completedAt: string;
   xpEarned: number;
+  /** Snapshot of the quest's duration at completion time (minutes). */
+  durationMinutes?: number;
+  /** Snapshot of the quest's category at completion time. */
+  category?: string;
 };
 
 export type PersistedCompletionEvent = Partial<QuestCompletionEvent> & {
@@ -64,6 +68,8 @@ export function createCompletionEvent(
     worldId: quest.worldId,
     completedAt,
     xpEarned: quest.xp,
+    durationMinutes: quest.durationMinutes,
+    category: quest.category,
   };
 }
 
@@ -78,12 +84,18 @@ export function normalizeCompletionEvent(
   const completedAt = parseTimestamp(event.completedAt ?? event.timestamp);
   const xpEarned = Number(event.xpEarned ?? event.xp ?? 0);
 
+  const durationMinutes = Number(event.durationMinutes);
+
   return {
     id: event.id && event.id.trim() ? event.id : `event-legacy-${questId}`,
     questId,
     worldId: normalizeQuestWorldId(event.worldId),
     completedAt,
     xpEarned: Number.isFinite(xpEarned) ? xpEarned : 0,
+    durationMinutes:
+      Number.isFinite(durationMinutes) && durationMinutes > 0 ? durationMinutes : undefined,
+    category:
+      typeof event.category === 'string' && event.category.trim() ? event.category : undefined,
   };
 }
 
@@ -107,12 +119,57 @@ export function summarizeCompletionHistory(
   };
 }
 
+/**
+ * Computes a day-based streak from completion events.
+ * A streak counts consecutive calendar days ending today or yesterday.
+ */
+export function computeCurrentStreak(
+  events: QuestCompletionEvent[],
+  referenceDate: Date = new Date(),
+): number {
+  const dayKeys = [
+    ...new Set(
+      events
+        .map((event) => getCalendarDayKey(event.completedAt))
+        .filter((dayKey) => dayKey.length > 0),
+    ),
+  ].sort();
+
+  if (dayKeys.length === 0) {
+    return 0;
+  }
+
+  const todayKey = getCalendarDayKey(referenceDate.toISOString());
+  const yesterdayKey = getCalendarDayKey(
+    new Date(referenceDate.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+  );
+  const latestDayKey = dayKeys[dayKeys.length - 1];
+  if (latestDayKey !== todayKey && latestDayKey !== yesterdayKey) {
+    return 0;
+  }
+
+  let streak = 1;
+  for (let index = dayKeys.length - 1; index > 0; index -= 1) {
+    const previousDate = new Date(`${dayKeys[index - 1]}T00:00:00`);
+    const currentDate = new Date(`${dayKeys[index]}T00:00:00`);
+    const differenceInDays = Math.round(
+      (currentDate.getTime() - previousDate.getTime()) / 86_400_000,
+    );
+    if (differenceInDays === 1) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 export function hydrateProgression({
   quests,
   completedQuestIds = [],
   completionEvents = [],
   totalXp = 0,
-  currentStreak = 0,
   lastCompletedAt = null,
 }: {
   quests: Quest[];
@@ -178,7 +235,7 @@ export function hydrateProgression({
     completionEvents: hydratedEvents,
     completedQuestIds: hydratedCompletedIds,
     totalXp: Number.isFinite(totalXp) ? totalXp : 0,
-    currentStreak: Number.isFinite(currentStreak) ? currentStreak : 0,
+    currentStreak: computeCurrentStreak(hydratedEvents),
     lastCompletedAt: parseOptionalTimestamp(lastCompletedAt) ?? latestEvent?.completedAt ?? null,
   };
 }

@@ -1,12 +1,10 @@
 import { Link, Slot, usePathname } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   const pathname = usePathname();
@@ -19,7 +17,15 @@ export default function AppTabs() {
   );
 }
 
-export function TabButton({ children, href, isFocused }: { children: string; href: '/' | '/explore'; isFocused: boolean }) {
+export function TabButton({
+  children,
+  href,
+  isFocused,
+}: {
+  children: string;
+  href: '/' | '/explore' | '/progress';
+  isFocused: boolean;
+}) {
   return (
     <Link href={href} asChild>
       <Pressable style={({ pressed }) => pressed && styles.pressed}>
@@ -36,29 +42,16 @@ export function TabButton({ children, href, isFocused }: { children: string; hre
 }
 
 export function CustomTabList({ pathname }: { pathname: string }) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <View style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
         <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
+          GlowQuest ✦
         </ThemedText>
 
         <TabButton href="/" isFocused={pathname === '/'}>Home</TabButton>
         <TabButton href="/explore" isFocused={pathname === '/explore'}>Explore</TabButton>
-
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
+        <TabButton href="/progress" isFocused={pathname === '/progress'}>Progress</TabButton>
       </ThemedView>
     </View>
   );
@@ -97,12 +90,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
   },
 });

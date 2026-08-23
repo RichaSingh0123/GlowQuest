@@ -16,6 +16,8 @@ export type Quest = {
   completed: boolean;
   xp: number;
   duration: string;
+  /** Numeric duration in minutes — source of truth for timers/session logic. */
+  durationMinutes: number;
   category: string;
   createdAt: string;
 };
@@ -40,6 +42,23 @@ export function normalizeQuestWorldId(worldId?: string, legacyWorld?: string): Q
   return HOME_QUEST_WORLD_ID;
 }
 
+export function parseDurationMinutes(value?: string): number {
+  if (!value) {
+    return 0;
+  }
+  const match = value.match(/\d+/);
+  if (!match) {
+    return 0;
+  }
+  const parsed = Number.parseInt(match[0], 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+export function formatDurationMinutes(minutes: number): string {
+  const safeMinutes = Number.isFinite(minutes) ? Math.max(0, Math.round(minutes)) : 0;
+  return `${safeMinutes} min`;
+}
+
 export function normalizeQuest(quest: PersistedQuestRecord & Pick<Quest, 'id' | 'title'>): Quest {
   const completed = quest.completed === true || quest.status === 'completed';
   const status = quest.status;
@@ -50,12 +69,18 @@ export function normalizeQuest(quest: PersistedQuestRecord & Pick<Quest, 'id' | 
         ? status
         : 'available';
 
+  const normalizedDurationMinutes =
+    typeof quest.durationMinutes === 'number' && Number.isFinite(quest.durationMinutes)
+      ? Math.max(0, Math.round(quest.durationMinutes))
+      : parseDurationMinutes(quest.duration);
+
   return {
     id: quest.id,
     emoji: quest.emoji ?? '✨',
     title: quest.title,
     description: quest.description ?? '',
-    duration: quest.duration ?? '0 min',
+    duration: quest.duration ?? formatDurationMinutes(normalizedDurationMinutes),
+    durationMinutes: normalizedDurationMinutes,
     xp: quest.xp ?? 0,
     category: quest.category ?? 'Personal',
     completed,
@@ -65,7 +90,13 @@ export function normalizeQuest(quest: PersistedQuestRecord & Pick<Quest, 'id' | 
   };
 }
 
-export const homeSeedQuests: Quest[] = [
+type SeedQuest = Omit<Quest, 'durationMinutes'>;
+
+function toQuest(seed: SeedQuest): Quest {
+  return { ...seed, durationMinutes: parseDurationMinutes(seed.duration) };
+}
+
+const homeSeedQuestsBase: SeedQuest[] = [
   {
     id: 'study-java',
     emoji: '📚',
@@ -107,7 +138,7 @@ export const homeSeedQuests: Quest[] = [
   },
 ];
 
-export const worldSeedQuests: Record<WorldId, Quest[]> = {
+const worldSeedQuestsBase: Record<WorldId, SeedQuest[]> = {
   dreamscape: [
     {
       id: 'dreamscape-water',
@@ -324,6 +355,15 @@ export const worldSeedQuests: Record<WorldId, Quest[]> = {
       status: 'available',
     },
   ],
+};
+
+export const homeSeedQuests: Quest[] = homeSeedQuestsBase.map(toQuest);
+
+export const worldSeedQuests: Record<WorldId, Quest[]> = {
+  dreamscape: worldSeedQuestsBase.dreamscape.map(toQuest),
+  'heros-journey': worldSeedQuestsBase['heros-journey'].map(toQuest),
+  'glow-up-city': worldSeedQuestsBase['glow-up-city'].map(toQuest),
+  'future-lab': worldSeedQuestsBase['future-lab'].map(toQuest),
 };
 
 export const seedQuests: Quest[] = [

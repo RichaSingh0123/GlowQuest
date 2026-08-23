@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,6 +41,8 @@ export function WorldAdventureScreen({ selectedWorldId }: { selectedWorldId?: st
   const { quests, acceptQuest, saveQuestForLater, restoreQuest, completeQuest } = useQuests();
   const worldId = selectedWorldId ?? routeWorldId;
   const world = worlds.find((item) => item.id === worldId);
+  const scrollRef = useRef<ScrollView>(null);
+  const deckYRef = useRef(0);
 
   if (!world) {
     return (
@@ -60,7 +63,10 @@ export function WorldAdventureScreen({ selectedWorldId }: { selectedWorldId?: st
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
         <SafeAreaView style={styles.content}>
           <Pressable onPress={() => router.back()} style={styles.backLink}>
             <ThemedText style={[styles.backLinkText, { color: colors.accent }]}>‹ Explore</ThemedText>
@@ -82,18 +88,25 @@ export function WorldAdventureScreen({ selectedWorldId }: { selectedWorldId?: st
           </View>
 
           <Pressable
-            onPress={() => router.replace('/')}
+            onPress={() =>
+              scrollRef.current?.scrollTo({ y: Math.max(deckYRef.current - 12, 0), animated: true })
+            }
             style={({ pressed }) => [styles.beginButton, { backgroundColor: colors.accent }, pressed && styles.pressed]}>
             <ThemedText style={styles.beginButtonText}>Begin this world's quests ✦</ThemedText>
           </Pressable>
 
-          <QuestDeck
-            quests={quests}
-            worldId={world.id}
-            onAccept={acceptQuest}
-            onSaveForLater={saveQuestForLater}
-            onComplete={completeQuest}
-          />
+          <View
+            onLayout={(event) => {
+              deckYRef.current = event.nativeEvent.layout.y;
+            }}>
+            <QuestDeck
+              quests={quests}
+              worldId={world.id}
+              onAccept={acceptQuest}
+              onSaveForLater={saveQuestForLater}
+              onComplete={completeQuest}
+            />
+          </View>
 
           {copy ? (
             <View style={[styles.laterPanel, { backgroundColor: colors.panel }]}>
