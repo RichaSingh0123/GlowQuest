@@ -1,10 +1,12 @@
+import type { WorldId } from '@/data/worlds';
+
 export type WorldQuestCopy = {
   accept: string;
   later: string;
   laterCollection: string;
 };
 
-export const worldQuestCopy: Record<string, WorldQuestCopy> = {
+export const worldQuestCopy: Record<WorldId, WorldQuestCopy> = {
   dreamscape: {
     accept: 'Nurture yourself',
     later: 'The Resting Garden',

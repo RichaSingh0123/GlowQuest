@@ -1,10 +1,18 @@
+export const WORLD_IDS = ['dreamscape', 'heros-journey', 'glow-up-city', 'future-lab'] as const;
+
+export type WorldId = (typeof WORLD_IDS)[number];
+
 export type World = {
-  id: string;
+  id: WorldId;
   name: string;
   emoji: string;
   description: string;
-  theme: string;
+  theme: WorldId;
 };
+
+export function isWorldId(value: string): value is WorldId {
+  return (WORLD_IDS as readonly string[]).includes(value);
+}
 
 export const worlds: World[] = [
   {

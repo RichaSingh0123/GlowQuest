@@ -4,11 +4,12 @@ import { Animated, PanResponder, Pressable, StyleSheet, View } from 'react-nativ
 import { QuestCard } from '@/components/QuestCard';
 import { ThemedText } from '@/components/themed-text';
 import { worldQuestCopy } from '@/constants/world-quest-copy';
-import type { Quest } from '@/context/quest-context';
+import type { Quest } from '@/data/quests';
+import type { WorldId } from '@/data/worlds';
 
 type QuestDeckProps = {
   quests: Quest[];
-  worldId: string;
+  worldId: WorldId;
   onAccept: (id: string) => void;
   onSaveForLater: (id: string) => void;
   onComplete: (quest: Quest) => void;

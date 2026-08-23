@@ -2,13 +2,15 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
+import type { QuestStatus } from '@/data/quests';
+
 type QuestCardProps = {
   emoji: string;
   title: string;
   description: string;
   duration: string;
   xp: number;
-  status?: 'available' | 'accepted' | 'later' | 'completed';
+  status?: QuestStatus;
   completed: boolean;
   showActions?: boolean;
   onComplete?: () => void;

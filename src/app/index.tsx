@@ -13,11 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { QuestCard } from '@/components/QuestCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useQuests } from '@/context/quest-context';
+import { HOME_QUEST_WORLD_ID, useQuests } from '@/context/quest-context';
 
 export default function HomeScreen() {
   const { quests, completedQuestIds, totalXp, completeQuest, addQuest } = useQuests();
-  const homeQuests = quests.filter((quest) => quest.worldId === 'everyday');
+  const homeQuests = quests.filter((quest) => quest.worldId === HOME_QUEST_WORLD_ID);
   const homeCompletedCount = homeQuests.filter((quest) => completedQuestIds.includes(quest.id)).length;
   const [celebration, setCelebration] = useState('');
   const [isAddQuestVisible, setIsAddQuestVisible] = useState(false);
