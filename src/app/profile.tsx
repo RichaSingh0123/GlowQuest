@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VISUAL_STYLE_REGISTRY } from '@/constants/visual-styles';
-import { getAvatarsForStyle, MAX_AVATAR_NAME_LENGTH } from '@/data/profile';
+import { getAvatarById, getAvatarsForStyle, MAX_AVATAR_NAME_LENGTH } from '@/data/profile';
 import type { VisualStyle } from '@/data/profile';
 import { useProfile } from '@/context/profile-context';
 import { useQuests } from '@/context/quest-context';
@@ -33,33 +33,64 @@ export default function ProfileScreen() {
   const colors = styleTokens.colors;
 
   const [nameDraft, setNameDraft] = useState(profile.avatarName);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftStyle, setDraftStyle] = useState<VisualStyle>(profile.visualStyle);
+  const [draftAvatarId, setDraftAvatarId] = useState(avatar.id);
+  const [draftWorldId, setDraftWorldId] = useState(profile.currentWorldId);
 
   useEffect(() => {
-    setNameDraft(profile.avatarName);
-  }, [profile.avatarName]);
+    if (!isEditing) {
+      setNameDraft(profile.avatarName);
+    }
+  }, [isEditing, profile.avatarName]);
 
   function displayName() {
     return profile.avatarName.trim() || avatar.name;
   }
 
-  function chooseStyle(style: VisualStyle) {
-    setVisualStyle(style);
-    if (avatar.style !== style) {
-      const firstAvatar = getAvatarsForStyle(style)[0];
+  function startEditing() {
+    setDraftStyle(profile.visualStyle);
+    setDraftAvatarId(avatar.id);
+    setDraftWorldId(profile.currentWorldId);
+    setNameDraft(profile.avatarName);
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setNameDraft(profile.avatarName);
+    setIsEditing(false);
+  }
+
+  function saveEditing() {
+    const trimmed = nameDraft.trim().slice(0, MAX_AVATAR_NAME_LENGTH);
+    // Persisted exclusively through the existing ProfileContext/AsyncStorage flow.
+    setVisualStyle(draftStyle);
+    setAvatar(draftAvatarId);
+    setAvatarName(trimmed);
+    selectCurrentWorld(draftWorldId);
+    setNameDraft(trimmed);
+    setIsEditing(false);
+  }
+
+  function chooseDraftStyle(style: VisualStyle) {
+    setDraftStyle(style);
+    const styleAvatars = getAvatarsForStyle(style);
+    if (!styleAvatars.some((option) => option.id === draftAvatarId)) {
+      const firstAvatar = styleAvatars[0];
       if (firstAvatar) {
-        setAvatar(firstAvatar.id);
+        setDraftAvatarId(firstAvatar.id);
       }
     }
   }
 
-  function commitName() {
-    const trimmed = nameDraft.trim().slice(0, MAX_AVATAR_NAME_LENGTH);
-    setNameDraft(trimmed);
-    setAvatarName(trimmed);
-  }
-
   const xpProgress = Math.min(profile.xpWithinLevel / 100, 1);
   const currentWorld = worlds.find((world) => world.id === profile.currentWorldId);
+
+  // While editing, pickers preview unsaved drafts; otherwise they mirror saved values.
+  const activeStyle = isEditing ? draftStyle : profile.visualStyle;
+  const activeAvatarId = isEditing ? draftAvatarId : profile.avatarId;
+  const activeWorldId = isEditing ? draftWorldId : profile.currentWorldId;
+  const previewAvatar = getAvatarById(activeAvatarId) ?? avatar;
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -71,11 +102,60 @@ export default function ProfileScreen() {
             Shape the hero behind every quest.
           </ThemedText>
 
+          <View style={styles.editActionsRow}>
+            {/* Cancel/Save stay mounted (hidden until edit mode) so they are always
+                present in the rendered tree and appear instantly when editing. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !isEditing }}
+              disabled={!isEditing}
+              onPress={cancelEditing}
+              style={({ pressed }) => [
+                styles.editButton,
+                { backgroundColor: colors.card, borderColor: colors.cardBorder },
+                !isEditing && styles.editButtonHidden,
+                pressed && isEditing && styles.pressed,
+              ]}>
+              <ThemedText style={[styles.editButtonText, { color: colors.textSecondary }]}>
+                Cancel
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !isEditing }}
+              disabled={!isEditing}
+              onPress={saveEditing}
+              style={({ pressed }) => [
+                styles.editButton,
+                { backgroundColor: colors.accent, borderColor: colors.accent },
+                !isEditing && styles.editButtonHidden,
+                pressed && isEditing && styles.pressed,
+              ]}>
+              <ThemedText style={[styles.editButtonText, { color: colors.onAccent }]}>
+                Save Changes ✓
+              </ThemedText>
+            </Pressable>
+            {!isEditing ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={startEditing}
+                style={({ pressed }) => [
+                  styles.editButton,
+                  { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+                  pressed && styles.pressed,
+                ]}>
+                <ThemedText style={[styles.editButtonText, { color: colors.accent }]}>
+                  ✎ Edit Profile
+                </ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+
           {/* Character hero card */}
           <View style={[styles.heroPanel, { backgroundColor: colors.heroPanel }]}>
             <View style={styles.heroRow}>
               <View style={[styles.avatarOrb, { backgroundColor: colors.highlight }]}>
-                <ThemedText style={styles.avatarOrbEmoji}>{avatar.emoji}</ThemedText>
+                <ThemedText style={styles.avatarOrbEmoji}>{previewAvatar.emoji}</ThemedText>
               </View>
               <View style={styles.heroCopy}>
                 <ThemedText style={[styles.heroName, { color: colors.heroPanelText }]}>
@@ -156,13 +236,14 @@ export default function ProfileScreen() {
           <View style={styles.styleRow}>
             {(Object.keys(VISUAL_STYLE_REGISTRY) as VisualStyle[]).map((styleKey) => {
               const option = VISUAL_STYLE_REGISTRY[styleKey];
-              const selected = profile.visualStyle === styleKey;
+              const selected = activeStyle === styleKey;
               return (
                 <Pressable
                   key={styleKey}
                   accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => chooseStyle(styleKey)}
+                  accessibilityState={{ selected, disabled: !isEditing }}
+                  disabled={!isEditing}
+                  onPress={() => chooseDraftStyle(styleKey)}
                   style={({ pressed }) => [
                     styles.styleCard,
                     { backgroundColor: selected ? colors.accentSoft : colors.card, borderColor: selected ? colors.accent : colors.cardBorder },
@@ -191,14 +272,15 @@ export default function ProfileScreen() {
           </ThemedText>
           <View style={[styles.avatarGridPanel, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             <View style={styles.avatarGrid}>
-              {getAvatarsForStyle(profile.visualStyle).map((option) => {
-                const selected = profile.avatarId === option.id;
+              {getAvatarsForStyle(activeStyle).map((option) => {
+                const selected = activeAvatarId === option.id;
                 return (
                   <Pressable
                     key={option.id}
                     accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => setAvatar(option.id)}
+                    accessibilityState={{ selected, disabled: !isEditing }}
+                    disabled={!isEditing}
+                    onPress={() => setDraftAvatarId(option.id)}
                     style={({ pressed }) => [
                       styles.avatarOption,
                       pressed && styles.pressed,
@@ -223,7 +305,7 @@ export default function ProfileScreen() {
               })}
             </View>
             <ThemedText style={[styles.avatarTagline, { color: colors.textSecondary }]}>
-              “{avatar.tagline}”
+              “{previewAvatar.tagline}”
             </ThemedText>
           </View>
 
@@ -233,9 +315,7 @@ export default function ProfileScreen() {
             <TextInput
               value={nameDraft}
               onChangeText={setNameDraft}
-              onEndEditing={commitName}
-              onSubmitEditing={commitName}
-              onBlur={commitName}
+              editable={isEditing}
               maxLength={MAX_AVATAR_NAME_LENGTH}
               placeholder={`e.g. ${avatar.name}`}
               placeholderTextColor={colors.textSecondary}
@@ -250,13 +330,14 @@ export default function ProfileScreen() {
           <ThemedText style={[styles.sectionKicker, { color: colors.accent }]}>CURRENT WORLD</ThemedText>
           <View style={styles.worldChips}>
             {worlds.map((world) => {
-              const selected = profile.currentWorldId === world.id;
+              const selected = activeWorldId === world.id;
               return (
                 <Pressable
                   key={world.id}
                   accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => selectCurrentWorld(world.id)}
+                  accessibilityState={{ selected, disabled: !isEditing }}
+                  disabled={!isEditing}
+                  onPress={() => setDraftWorldId(world.id)}
                   style={({ pressed }) => [
                     styles.worldChip,
                     {
@@ -344,6 +425,25 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 15,
     lineHeight: 22,
+  },
+  editActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 14,
+  },
+  editButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  editButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  editButtonHidden: {
+    display: 'none',
   },
   heroPanel: {
     marginTop: 26,
