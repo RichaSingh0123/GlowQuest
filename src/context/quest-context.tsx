@@ -2,6 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react';
 
 import {
+  createCompletionEvent,
+  hasCompletionEventForQuest,
+  hydrateProgression,
+  type QuestCompletionEvent,
+} from '@/data/progression';
+import {
   HOME_QUEST_WORLD_ID,
   normalizeQuest,
   seedQuests,
@@ -10,13 +16,17 @@ import {
 } from '@/data/quests';
 
 export type { Quest, QuestStatus, QuestWorldId } from '@/data/quests';
+export type { QuestCompletionEvent } from '@/data/progression';
 export { HOME_QUEST_WORLD_ID } from '@/data/quests';
+export { getLevelFromXp, getXpWithinLevel } from '@/data/progression';
 
 type QuestContextValue = {
   quests: Quest[];
   completedQuestIds: string[];
+  completionEvents: QuestCompletionEvent[];
   totalXp: number;
   currentStreak: number;
+  lastCompletedAt: string | null;
   acceptQuest: (id: string) => void;
   saveQuestForLater: (id: string) => void;
   restoreQuest: (id: string) => void;
@@ -32,8 +42,10 @@ type QuestState = {
   hydrated: boolean;
   quests: Quest[];
   completedQuestIds: string[];
+  completionEvents: QuestCompletionEvent[];
   totalXp: number;
   currentStreak: number;
+  lastCompletedAt: string | null;
 };
 
 type QuestAction =
@@ -75,19 +87,28 @@ function questReducer(state: QuestState, action: QuestAction): QuestState {
             : quest,
         ),
       };
-    case 'complete':
-      if (state.completedQuestIds.includes(action.quest.id)) {
+    case 'complete': {
+      const alreadyCompleted =
+        state.completedQuestIds.includes(action.quest.id) ||
+        hasCompletionEventForQuest(state.completionEvents, action.quest.id) ||
+        action.quest.completed;
+      if (alreadyCompleted) {
         return state;
       }
+
+      const completedAt = new Date().toISOString();
       return {
         ...state,
         completedQuestIds: [...state.completedQuestIds, action.quest.id],
+        completionEvents: [...state.completionEvents, createCompletionEvent(action.quest, completedAt)],
         totalXp: state.totalXp + action.quest.xp,
         currentStreak: 1,
+        lastCompletedAt: completedAt,
         quests: state.quests.map((quest) =>
           quest.id === action.quest.id ? { ...quest, completed: true, status: 'completed' } : quest,
         ),
       };
+    }
     case 'add':
       return { ...state, quests: [...state.quests, action.quest] };
   }
@@ -97,8 +118,10 @@ const defaultQuestState: QuestState = {
   hydrated: false,
   quests: seedQuests,
   completedQuestIds: [],
+  completionEvents: [],
   totalXp: 0,
   currentStreak: 0,
+  lastCompletedAt: null,
 };
 
 const QuestContext = createContext<QuestContextValue | null>(null);
@@ -114,8 +137,10 @@ export function QuestProvider({ children }: { children: ReactNode }) {
           const parsedState = JSON.parse(savedState) as {
             quests?: PersistedQuestRecord[];
             completedQuestIds?: string[];
+            completionEvents?: unknown[];
             totalXp?: number;
             currentStreak?: number;
+            lastCompletedAt?: string | null;
           };
 
           if (parsedState.quests) {
@@ -126,17 +151,25 @@ export function QuestProvider({ children }: { children: ReactNode }) {
               return [normalizeQuest({ ...quest, id: quest.id, title: quest.title })];
             });
             const savedQuestIds = new Set(savedQuests.map((quest) => quest.id));
+            const quests = [
+              ...savedQuests,
+              ...seedQuests.filter((quest) => !savedQuestIds.has(quest.id)),
+            ];
+            const progression = hydrateProgression({
+              quests,
+              completedQuestIds: parsedState.completedQuestIds,
+              completionEvents: parsedState.completionEvents,
+              totalXp: parsedState.totalXp,
+              currentStreak: parsedState.currentStreak,
+              lastCompletedAt: parsedState.lastCompletedAt,
+            });
+
             dispatch({
               type: 'hydrate',
               state: {
                 hydrated: true,
-                quests: [
-                  ...savedQuests,
-                  ...seedQuests.filter((quest) => !savedQuestIds.has(quest.id)),
-                ],
-                completedQuestIds: parsedState.completedQuestIds ?? [],
-                totalXp: parsedState.totalXp ?? 0,
-                currentStreak: parsedState.currentStreak ?? 0,
+                quests,
+                ...progression,
               },
             });
           } else {
@@ -198,8 +231,10 @@ export function QuestProvider({ children }: { children: ReactNode }) {
       value={{
         quests: state.quests,
         completedQuestIds: state.completedQuestIds,
+        completionEvents: state.completionEvents,
         totalXp: state.totalXp,
         currentStreak: state.currentStreak,
+        lastCompletedAt: state.lastCompletedAt,
         acceptQuest,
         saveQuestForLater,
         restoreQuest,

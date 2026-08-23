@@ -3,12 +3,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useQuests } from '@/context/quest-context';
+import { getLevelFromXp, getXpWithinLevel, useQuests } from '@/context/quest-context';
 
 export default function ProgressScreen() {
   const { completedQuestIds, totalXp, currentStreak } = useQuests();
-  const level = Math.floor(totalXp / 100) + 1;
-  const currentXp = totalXp % 100;
+  const level = getLevelFromXp(totalXp);
+  const currentXp = getXpWithinLevel(totalXp);
   const questsCompleted = completedQuestIds.length;
 
   return (

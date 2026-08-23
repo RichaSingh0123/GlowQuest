@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { QuestCard } from '@/components/QuestCard';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { HOME_QUEST_WORLD_ID, useQuests } from '@/context/quest-context';
+import { getLevelFromXp, getXpWithinLevel, HOME_QUEST_WORLD_ID, useQuests } from '@/context/quest-context';
 
 export default function HomeScreen() {
   const { quests, completedQuestIds, totalXp, completeQuest, addQuest } = useQuests();
@@ -29,8 +29,8 @@ export default function HomeScreen() {
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
   const celebrationOffset = useRef(new Animated.Value(8)).current;
 
-  const level = Math.floor(totalXp / 100) + 1;
-  const currentXp = totalXp % 100;
+  const level = getLevelFromXp(totalXp);
+  const currentXp = getXpWithinLevel(totalXp);
   const progress = currentXp / 100;
 
   useEffect(() => {
