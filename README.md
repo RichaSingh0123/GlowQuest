@@ -1,56 +1,100 @@
-# Welcome to your Expo app 👋
+# 🎮 GlowQuest
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> An AI-powered gamified personal growth RPG that transforms real-life goals into quests, stories, and adventures.
 
-## Get started
+GlowQuest is a personal productivity and self-growth application designed to make everyday goals feel less like boring tasks and more like an interactive game.
 
-1. Install dependencies
+Instead of simply writing down a to-do list, users progress through quests, earn rewards, build their character, and turn real-life growth into an engaging adventure.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## ✨ Features
 
-   ```bash
-   npx expo start
-   ```
+- 🎯 Transform real-life goals into actionable quests
+- 🧙 Personalized player profile and progression
+- ⭐ XP-based progression system
+- 🏆 Rewards and achievements
+- 📖 Story-driven productivity experience
+- 📊 Track personal progress and growth
+- 🤖 AI-powered personalization
+- 🎮 Gamified approach to productivity and self-improvement
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🛠️ Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **TypeScript**
+- **React Native**
+- **Expo**
+- **JavaScript**
+- **CSS**
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## 🚧 Project Status
 
-```bash
-npm run reset-project
-```
+GlowQuest is currently under active development.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Current Progress
 
-### Other setup steps
+- [x] Project foundation
+- [x] Initial Expo setup
+- [x] Player profile foundation
+- [x] Basic project structure
+- [ ] Quest system
+- [ ] XP & progression system
+- [ ] Rewards & achievements
+- [ ] Story system
+- [ ] AI integration
+- [ ] Progress analytics
+- [ ] Final UI/UX polish
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+---
 
-## Learn more
+## 🗺️ Roadmap
 
-To learn more about developing your project with Expo, look at the following resources:
+### Phase 1 — Foundation
+Project architecture, navigation, player profile, and core UI.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Phase 2 — Gamification
+Quests, XP, levels, rewards, achievements, and progression.
 
-## Join the community
+### Phase 3 — Story & Personalization
+Transform goals and routines into personalized adventures.
 
-Join our community of developers creating universal apps.
+### Phase 4 — AI Integration
+Use AI to personalize quests, recommendations, stories, and challenges.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Phase 5 — Progress & Analytics
+Track consistency, habits, achievements, and personal growth.
+
+### Phase 6 — Polish & Release
+Improve UI/UX, performance, testing, and prepare the application for deployment.
+
+---
+
+## 🎯 Vision
+
+GlowQuest aims to make productivity feel exciting rather than overwhelming.
+
+The goal is simple:
+
+**Don't just complete your tasks.  
+Complete your quests.  
+Level up your life. 🎮✨**
+
+---
+
+## 👩‍💻 Developer
+
+**Richa Singh**
+
+CSBS Student | Developer | AI & Data Enthusiast
+
+Interested in building meaningful technology at the intersection of **software development, AI, data, and human-centered design**.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
